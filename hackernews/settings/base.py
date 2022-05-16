@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config, Csv
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1q64-t(65je@mhy+3$hu0y+h_b#3pl!a7$nu1s^72ch=lhn_=z'
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-1q64-t(65je@mhy+3$hu0y+h_b#3pl!a7$nu1s^72ch=lhn_=z")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
+ALLOWED_HOSTS = [*]
 
 
 # Application definition
@@ -116,6 +119,8 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+USE_L10N = True
+
 USE_TZ = True
 
 
@@ -141,3 +146,29 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "accounts.User"
+
+CELERY_BROKER_URL = config("CLOUDAMQP_URL", default="amqp://localhost")
+
+# CELERY_RESULT_BACKEND = config("REDIS_URL", default="")
+
+CELERY_ACCEPT_CONTENT = ["application/json"]
+
+CELERY_TASK_SERIALIZER = "json"
+
+CELERY_RESULT_SERIALIZER = "json"
+
+CELERY_BEAT_SCHEDULE = {
+    "get_latest_stories": {
+    "task": "news.tasks.get_latest_stories",
+    "schedule": crontab(minute="*/5"),
+    },
+}
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",  # <-- And here   
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 100,    
+}
