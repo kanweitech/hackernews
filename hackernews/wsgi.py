@@ -11,6 +11,9 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hackernews.settings')
+from decouple import config
+
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hackernews.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', config('settings', default='hackernews.settings.development'))
 
 application = get_wsgi_application()
